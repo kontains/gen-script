@@ -143,7 +143,8 @@ const { files } = await workspace.grep(/[a-z][a-z0-9]+/, { globs: "*.md" })
 
 ### LLM Tools
 
-Register JavaScript functions as **tools**.
+Register JavaScript functions as [tools](https://microsoft.github.io/genaiscript/reference/scripts/tools)
+(with fallback for models that don't support tools).
 
 ```js
 defTool(
@@ -305,7 +306,7 @@ npx genaiscript ... --pull-request-reviews
 
 Build reliable prompts using [tests and evals](https://microsoft.github.io/genaiscript/reference/scripts/tests) powered by [promptfoo](https://promptfoo.dev/).
 
-```js wrap 
+```js wrap
 script({ ..., tests: {
   files: "penguins.csv",
   rubric: "is a data analysis report",

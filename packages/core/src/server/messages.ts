@@ -78,7 +78,10 @@ export interface PromptScriptRunOptions {
     failOnErrors: boolean
     removeOut: boolean
     vars: string[]
+    fallbackTools: boolean
     jsSource: string
+    logprobs: boolean
+    topLogprobs: number
 }
 
 export interface PromptScriptStart extends RequestMessage {
@@ -117,6 +120,7 @@ export interface PromptScriptProgressResponseEvent {
     tokens?: number
     response?: string
     responseChunk?: string
+    responseTokens?: Logprob[]
     inner?: boolean
 }
 

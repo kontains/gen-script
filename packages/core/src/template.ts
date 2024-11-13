@@ -451,9 +451,12 @@ export async function parsePromptScript(
             c.checkString("cacheName")
             c.checkString("filename")
             c.checkString("contentSafety")
+            c.checkStringArray("choices")
+            c.checkNumber("topLogprobs")
 
             c.checkRecord("modelConcurrency")
             c.checkObjectArray("defTools")
+            c.checkBool("logprobs")
         })
 
         const r = c.template

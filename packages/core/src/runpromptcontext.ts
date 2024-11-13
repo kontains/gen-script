@@ -1,3 +1,4 @@
+// cspell: disable
 import {
     PromptNode,
     appendChild,
@@ -33,6 +34,8 @@ import { mustacheRender } from "./mustache"
 import { imageEncodeForLLM } from "./image"
 import { delay, uniq } from "es-toolkit"
 import {
+    addToolDefinitionsMessage,
+    appendSystemMessage,
     executeChatSession,
     mergeGenerationOptions,
     tracePromptResult,
@@ -49,6 +52,7 @@ import {
     TOKEN_NO_ANSWER,
     MODEL_PROVIDER_AICI,
     SYSTEM_FENCE,
+    DOCS_DEF_FILES_IS_EMPTY_URL,
 } from "./constants"
 import { renderAICI } from "./aici"
 import { resolveSystems, resolveTools } from "./systems"
@@ -164,15 +168,21 @@ export function createChatTurnGenerationContext(
             // shortcuts
             if (body === undefined || body === null) {
                 if (!doptions.ignoreEmpty)
-                    throw new Error(`def ${name} is ${body}`)
+                    throw new Error(
+                        `def ${name} is ${body}. See ${DOCS_DEF_FILES_IS_EMPTY_URL}`
+                    )
                 return undefined
             } else if (Array.isArray(body)) {
                 if (body.length === 0 && !doptions.ignoreEmpty)
-                    throw new Error(`def ${name} is empty`)
+                    throw new Error(
+                        `def ${name} is empty. See ${DOCS_DEF_FILES_IS_EMPTY_URL}`
+                    )
                 body.forEach((f) => ctx.def(name, f, defOptions))
             } else if (typeof body === "string") {
                 if (body.trim() === "" && !doptions.ignoreEmpty)
-                    throw new Error(`def ${name} is empty`)
+                    throw new Error(
+                        `def ${name} is empty. See ${DOCS_DEF_FILES_IS_EMPTY_URL}`
+                    )
                 appendChild(
                     node,
                     createDef(name, { filename: "", content: body }, doptions)
@@ -575,6 +585,7 @@ export function createChatGenerationContext(
             infoCb?.({ text: `prompt ${label || ""}` })
 
             const genOptions = mergeGenerationOptions(options, runOptions)
+            genOptions.fallbackTools = undefined
             genOptions.inner = true
             genOptions.trace = runTrace
             const { info } = await resolveModelConnectionInfo(genOptions, {
@@ -648,11 +659,12 @@ export function createChatGenerationContext(
                 }
             }
 
-            const systemMessage: ChatCompletionSystemMessageParam = {
-                role: "system",
-                content: "",
-            }
-            const systemScripts = resolveSystems(prj, runOptions ?? {})
+            const systemScripts = resolveSystems(
+                prj,
+                runOptions ?? {},
+                tools,
+                genOptions
+            )
             if (systemScripts.length)
                 try {
                     runTrace.startDetails("👾 systems")
@@ -691,8 +703,7 @@ export function createChatGenerationContext(
                                 smsg.role === "user" &&
                                 typeof smsg.content === "string"
                             ) {
-                                systemMessage.content +=
-                                    SYSTEM_FENCE + "\n" + smsg.content + "\n"
+                                appendSystemMessage(messages, smsg.content)
                                 runTrace.fence(smsg.content, "markdown")
                             } else
                                 throw new NotSupportedError(
@@ -703,6 +714,8 @@ export function createChatGenerationContext(
                             runTrace.fence(sysr.aici, "yaml")
                             messages.push(sysr.aici)
                         }
+                        genOptions.logprobs =
+                            genOptions.logprobs || system.logprobs
                         runTrace.detailsFenced("js", system.jsSource, "js")
                         runTrace.endDetails()
                         if (sysr.status !== "success")
@@ -713,8 +726,10 @@ export function createChatGenerationContext(
                 } finally {
                     runTrace.endDetails()
                 }
-            if (systemMessage.content) messages.unshift(systemMessage)
-
+            if (systemScripts.includes("system.tool_calls")) {
+                addToolDefinitionsMessage(messages, tools)
+                genOptions.fallbackTools = true
+            }
             const connection = await resolveModelConnectionInfo(genOptions, {
                 trace: runTrace,
                 token: true,

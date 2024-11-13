@@ -194,6 +194,7 @@ export const DOCS_CONFIGURATION_HUGGINGFACE_URL =
     "https://microsoft.github.io/genaiscript/getting-started/configuration/#huggingface"
 export const DOCS_CONFIGURATION_CONTENT_SAFETY_URL =
     "https://microsoft.github.io/genaiscript/reference/scripts/content-safety"
+export const DOCS_DEF_FILES_IS_EMPTY_URL = "https://microsoft.github.io/genaiscript/reference/scripts/context/#empty-files"
 
 export const MODEL_PROVIDERS = Object.freeze([
     {
@@ -315,7 +316,7 @@ export const PROMISE_QUEUE_CONCURRENCY_DEFAULT = 16
 export const GITHUB_REST_API_CONCURRENCY_LIMIT = 8
 export const GITHUB_REST_PAGE_DEFAULT = 10
 
-export const TOKEN_TRUNCATION_THRESHOLD = 128
+export const TOKEN_TRUNCATION_THRESHOLD = 16
 
 export const GIT_IGNORE_GENAI = ".gitignore.genai"
 export const CLI_ENV_VAR_RX = /^genaiscript_var_/i
@@ -331,3 +332,7 @@ export const AZURE_CONTENT_SAFETY_PROMPT_SHIELD_MAX_DOCUMENTS = 9000
 
 export const TOKEN_MISSING_INFO = "<MISSING_INFO>"
 export const TOKEN_NO_ANSWER = "<NO_ANSWER>"
+
+export const CHOICE_LOGIT_BIAS = 5
+
+export const SANITIZED_PROMPT_INJECTION = "...prompt injection detected, content removed..."

@@ -130,6 +130,8 @@ type ModelType = OptionsOrString<
     | "github:gpt-4o-mini"
     | "github:o1-mini"
     | "github:o1-preview"
+    | "github:AI21-Jamba-1.5-Large"
+    | "github:AI21-Jamba-1-5-Mini"
     | "azure:gpt-4o"
     | "azure:gpt-4o-mini"
     | "ollama:phi3.5"
@@ -151,6 +153,7 @@ type ModelSmallType = OptionsOrString<
     | "azure:gpt-4o-mini"
     | "openai:gpt-3.5-turbo"
     | "github:Phi-3-5-mini-instruct"
+    | "github:AI21-Jamba-1-5-Mini"
 >
 
 interface ModelConnectionOptions {
@@ -176,6 +179,21 @@ interface ModelOptions extends ModelConnectionOptions {
      * @default 0.2
      */
     temperature?: number
+
+    /**
+     * A list of keywords that should be found in the output.
+     */
+    choices?: ElementOrArray<string>
+
+    /**
+     * Returns the log probabilities of the each tokens. Not supported in all models.
+     */
+    logprobs?: boolean
+
+    /**
+     * Number of alternate token logprobs to generate, up to 5. Enables logprobs.
+     */
+    topLogprobs?: number
 
     /**
      * Specifies the type of output. Default is plain text.
@@ -280,14 +298,16 @@ interface ScriptRuntimeOptions extends LineNumberingOptions {
     secrets?: string[]
 }
 
+type PromptJSONParameterType<T> = T & { required?: boolean }
+
 type PromptParameterType =
     | string
     | number
     | boolean
     | object
-    | JSONSchemaNumber
-    | JSONSchemaString
-    | JSONSchemaBoolean
+    | PromptJSONParameterType<JSONSchemaNumber>
+    | PromptJSONParameterType<JSONSchemaString>
+    | PromptJSONParameterType<JSONSchemaBoolean>
 type PromptParametersSchema = Record<
     string,
     PromptParameterType | PromptParameterType[]
@@ -778,7 +798,6 @@ type PromptSystemArgs = Omit<
     | "responseSchema"
     | "files"
     | "modelConcurrency"
-    | "parameters"
 >
 
 type StringLike = string | WorkspaceFile | WorkspaceFile[]
@@ -860,7 +879,7 @@ interface ContentSafetyOptions {
      * Runs the default content safety validator
      * to prevent prompt injection.
      */
-    detectPromptInjection?: boolean
+    detectPromptInjection?: "always" | "available" | boolean
 }
 
 interface DefOptions
@@ -991,6 +1010,13 @@ interface DataFrame {
     validation?: FileEditValidation
 }
 
+interface Logprob {
+    token: string
+    logprob: number
+    entropy?: number
+    topLogprobs?: { token: string; logprob: number }[]
+}
+
 interface RunPromptResult {
     messages: ChatCompletionMessageParam[]
     text: string
@@ -1013,6 +1039,8 @@ interface RunPromptResult {
     edits?: Edits[]
     changelogs?: ChangeLog[]
     model?: ModelType
+    logprobs?: Logprob[]
+    perplexity?: number
 }
 
 /**
@@ -1118,6 +1146,10 @@ type TokenDecoder = (lines: Iterable<number>) => string
 
 interface Tokenizer {
     model: string
+    /**
+     * Number of tokens
+     */
+    size?: number
     encode: TokenEncoder
     decode: TokenDecoder
 }
@@ -1530,6 +1562,7 @@ interface HTML {
 
 interface GitCommit {
     sha: string
+    date: string
     message: string
 }
 
@@ -1607,6 +1640,9 @@ interface Git {
         head?: string
         count?: number
         merges?: boolean
+        author?: string
+        until?: string
+        after?: string
         excludedGrep?: string | RegExp
         paths?: ElementOrArray<string>
         excludedPaths?: ElementOrArray<string>

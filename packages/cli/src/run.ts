@@ -1,6 +1,6 @@
 import { capitalize } from "inflection"
 import path, { resolve, join, relative, dirname } from "node:path"
-import { consoleColors, isQuiet, wrapColor } from "./log"
+import { consoleColors, isQuiet, wrapColor, wrapRgbColor } from "./log"
 import { emptyDir, ensureDir, appendFileSync, exists } from "fs-extra"
 import { convertDiagnosticsToSARIF } from "./sarif"
 import { buildProject } from "./build"
@@ -81,6 +81,7 @@ import { GenerationStats } from "../../core/src/usage"
 import { traceAgentMemory } from "../../core/src/agent"
 import { appendFile } from "node:fs/promises"
 import { parseOptionsVars } from "./vars"
+import { logprobColor } from "../../core/src/logprob"
 
 async function setupTraceWriting(trace: MarkdownTrace, filename: string) {
     logVerbose(`trace: ${filename}`)
@@ -171,9 +172,9 @@ export async function runScript(
     const excludeGitIgnore = !!options.excludeGitIgnore
     const out = options.out
     const stream = !options.json && !options.yaml && !out
-    const retry = parseInt(options.retry) || 8
-    const retryDelay = parseInt(options.retryDelay) || 15000
-    const maxDelay = parseInt(options.maxDelay) || 180000
+    const retry = normalizeInt(options.retry) || 8
+    const retryDelay = normalizeInt(options.retryDelay) || 15000
+    const maxDelay = normalizeInt(options.maxDelay) || 180000
     const outTrace = options.outTrace
     const outAnnotations = options.outAnnotations
     const failOnErrors = options.failOnErrors
@@ -197,6 +198,9 @@ export async function runScript(
     const cacheName = options.cacheName
     const cancellationToken = options.cancellationToken
     const jsSource = options.jsSource
+    const fallbackTools = !!options.fallbackTools
+    const logprobs = options.logprobs
+    const topLogprobs = normalizeInt(options.topLogprobs)
 
     if (options.model) host.defaultModelOptions.model = options.model
     if (options.smallModel)
@@ -311,9 +315,20 @@ export async function runScript(
                                 ? CONSOLE_TOKEN_INNER_COLORS
                                 : CONSOLE_TOKEN_COLORS
                             for (const token of responseTokens) {
-                                tokenColor = (tokenColor + 1) % colors.length
-                                const c = colors[tokenColor]
-                                process.stdout.write(wrapColor(c, token))
+                                if (!isNaN(token.logprob)) {
+                                    const c = wrapRgbColor(
+                                        logprobColor(token),
+                                        token.token
+                                    )
+                                    process.stdout.write(c)
+                                } else {
+                                    tokenColor =
+                                        (tokenColor + 1) % colors.length
+                                    const c = colors[tokenColor]
+                                    process.stdout.write(
+                                        wrapColor(c, token.token)
+                                    )
+                                }
                             }
                         } else {
                             if (!inner) process.stdout.write(responseChunk)
@@ -351,6 +366,9 @@ export async function runScript(
             maxDelay,
             vars,
             trace,
+            fallbackTools,
+            logprobs,
+            topLogprobs,
             cliInfo: {
                 files,
             },
@@ -362,7 +380,6 @@ export async function runScript(
         logError(err)
         return fail("runtime error", RUNTIME_ERROR_CODE)
     }
-    if (!isQuiet) logVerbose("") // force new line
 
     await aggregateResults(scriptId, outTrace, stats, result)
     await traceAgentMemory(trace)
@@ -462,7 +479,6 @@ export async function runScript(
                 )
         }
     } else {
-        logVerbose("")
         if (options.json && result !== undefined)
             console.log(JSON.stringify(result, null, 2))
         if (options.yaml && result !== undefined)
