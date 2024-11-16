@@ -762,7 +762,28 @@ interface ExpansionVariables {
     /**
      * User defined variables
      */
-    vars: Record<string, string | boolean | number | object | any>
+    vars: Record<string, string | boolean | number | object | any> & {
+        /**
+         * When running in GitHub Copilot Chat, the current user prompt
+         */
+        question?: string
+        /**
+         * When running in GitHub Copilot Chat, the current chat history
+         */
+        "copilot.history"?: (HistoryMessageUser | HistoryMessageAssistant)[]
+        /**
+         * When running in GitHub Copilot Chat, the current editor content
+         */
+        "copilot.editor"?: string
+        /**
+         * When running in GitHub Copilot Chat, the current selection
+         */
+        "copilot.selection"?: string
+        /**
+         * When running in GitHub Copilot Chat, the current terminal content
+         */
+        "copilot.terminalSelection?": string
+    }
 
     /**
      * List of secrets used by the prompt, must be registered in `genaiscript`.
@@ -2063,10 +2084,6 @@ interface HighlightOptions {
     maxLength?: number
 }
 
-interface WebSearchResult {
-    webPages: WorkspaceFile[]
-}
-
 interface VectorSearchOptions extends EmbeddingsModelOptions {
     /**
      * Maximum number of embeddings to use
@@ -2122,10 +2139,20 @@ interface FuzzSearchOptions {
 
 interface Retrieval {
     /**
-     * Executers a Bing web search. Requires to configure the BING_SEARCH_API_KEY secret.
+     * Executers a web search with Tavily or Bing Search.
      * @param query
      */
-    webSearch(query: string): Promise<WorkspaceFile[]>
+    webSearch(
+        query: string,
+        options?: {
+            count?: number
+            provider?: "tavily" | "bing"
+            /**
+             * Return undefined when no web search providers are present
+             */
+            ignoreMissingProvider?: boolean
+        }
+    ): Promise<WorkspaceFile[]>
 
     /**
      * Search using similarity distance on embeddings
@@ -2198,6 +2225,18 @@ interface DefSchemaOptions {
 
 type ChatFunctionArgs = { context: ToolCallContext } & Record<string, any>
 type ChatFunctionHandler = (args: ChatFunctionArgs) => Awaitable<ToolCallOutput>
+type ChatMessageRole = "user" | "assistant" | "system"
+
+interface HistoryMessageUser {
+    role: "user"
+    content: string
+}
+
+interface HistoryMessageAssistant {
+    role: "assistant"
+    name?: string
+    content: string
+}
 
 interface WriteTextOptions extends ContextExpansionOptions {
     /**
@@ -2208,7 +2247,7 @@ interface WriteTextOptions extends ContextExpansionOptions {
     /**
      * Specifies the message role. Default is user
      */
-    role?: "user" | "assistant" | "system"
+    role?: ChatMessageRole
 }
 
 type PromptGenerator = (ctx: ChatGenerationContext) => Awaitable<unknown>
@@ -2383,7 +2422,7 @@ interface ChatGenerationContext extends ChatTurnGenerationContext {
     ): void
     defFileOutput(
         pattern: ElementOrArray<string | WorkspaceFile>,
-        description?: string,
+        description: string,
         options?: FileOutputOptions
     ): void
     runPrompt(

@@ -82,18 +82,22 @@ export const DEFAULT_EMBEDDINGS_MODEL = "openai:text-embedding-ada-002"
 export const DEFAULT_TEMPERATURE = 0.8
 export const BUILTIN_PREFIX = "_builtin/"
 export const CACHE_LLMREQUEST_PREFIX = "genaiscript/cache/llm/"
-export const CACHE_AIREQUEST_PREFIX = "genaiscript/cache/ai/"
+export const CACHE_AIREQUEST_TRACE_PREFIX = "genaiscript/cache/ai/trace/"
+export const CACHE_AIREQUEST_TEXT_PREFIX = "genaiscript/cache/ai/text/"
 export const TRACE_NODE_PREFIX = "genaiscript/trace/"
 export const EXTENSION_ID = "genaiscript.genaiscript-vscode"
 export const COPILOT_CHAT_PARTICIPANT_ID = TOOL_ID
 export const COPILOT_CHAT_PARTICIPANT_SCRIPT_ID = "copilotchat"
+
 export const BING_SEARCH_ENDPOINT = "https://api.bing.microsoft.com/v7.0/search"
+export const TAVILY_ENDPOINT = "https://api.tavily.com/search"
+
 export const SYSTEM_FENCE = "\n"
 export const MAX_DATA_REPAIRS = 1
 export const NPM_CLI_PACKAGE = "genaiscript"
 export const AICI_CONTROLLER = "gh:microsoft/aici/jsctrl"
 export const ICON_LOGO_NAME = "genaiscript-logo"
-export const SARIFF_RULEID_PREFIX = "genascript/"
+export const SARIFF_RULEID_PREFIX = "genaiscript/"
 export const SARIFF_BUILDER_URL = "https://github.com/microsoft/genaiscript/"
 export const SARIFF_BUILDER_TOOL_DRIVER_NAME = TOOL_ID
 export const FETCH_RETRY_DEFAULT = 5
@@ -194,7 +198,14 @@ export const DOCS_CONFIGURATION_HUGGINGFACE_URL =
     "https://microsoft.github.io/genaiscript/getting-started/configuration/#huggingface"
 export const DOCS_CONFIGURATION_CONTENT_SAFETY_URL =
     "https://microsoft.github.io/genaiscript/reference/scripts/content-safety"
-export const DOCS_DEF_FILES_IS_EMPTY_URL = "https://microsoft.github.io/genaiscript/reference/scripts/context/#empty-files"
+export const DOCS_DEF_FILES_IS_EMPTY_URL =
+    "https://microsoft.github.io/genaiscript/reference/scripts/context/#empty-files"
+export const DOCS_WEB_SEARCH_URL =
+    "https://microsoft.github.io/genaiscript/reference/scripts/web-search/"
+export const DOCS_WEB_SEARCH_BING_SEARCH_URL =
+    "https://microsoft.github.io/genaiscript/reference/scripts/web-search/#bingn"
+export const DOCS_WEB_SEARCH_TAVILY_URL =
+    "https://microsoft.github.io/genaiscript/reference/scripts/web-search/#tavily"
 
 export const MODEL_PROVIDERS = Object.freeze([
     {
@@ -223,6 +234,16 @@ export const MODEL_PROVIDERS = Object.freeze([
         url: DOCS_CONFIGURATION_AZURE_MODELS_SERVERLESS_URL,
     },
     {
+        id: MODEL_PROVIDER_ANTHROPIC,
+        detail: "Anthropic models",
+        url: DOCS_CONFIGURATION_ANTHROPIC_URL,
+    },
+    {
+        id: MODEL_PROVIDER_HUGGINGFACE,
+        detail: "Hugging Face models",
+        url: DOCS_CONFIGURATION_HUGGINGFACE_URL,
+    },
+    {
         id: MODEL_PROVIDER_OLLAMA,
         detail: "Ollama local model",
         url: DOCS_CONFIGURATION_OLLAMA_URL,
@@ -236,16 +257,6 @@ export const MODEL_PROVIDERS = Object.freeze([
         id: MODEL_PROVIDER_LITELLM,
         detail: "LiteLLM proxy",
         url: DOCS_CONFIGURATION_LITELLM_URL,
-    },
-    {
-        id: MODEL_PROVIDER_ANTHROPIC,
-        detail: "Anthropic models",
-        url: DOCS_CONFIGURATION_ANTHROPIC_URL,
-    },
-    {
-        id: MODEL_PROVIDER_HUGGINGFACE,
-        detail: "Hugging Face models",
-        url: DOCS_CONFIGURATION_HUGGINGFACE_URL,
     },
 ])
 
@@ -335,4 +346,5 @@ export const TOKEN_NO_ANSWER = "<NO_ANSWER>"
 
 export const CHOICE_LOGIT_BIAS = 5
 
-export const SANITIZED_PROMPT_INJECTION = "...prompt injection detected, content removed..."
+export const SANITIZED_PROMPT_INJECTION =
+    "...prompt injection detected, content removed..."

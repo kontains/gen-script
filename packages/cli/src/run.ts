@@ -82,6 +82,7 @@ import { traceAgentMemory } from "../../core/src/agent"
 import { appendFile } from "node:fs/promises"
 import { parseOptionsVars } from "./vars"
 import { logprobColor } from "../../core/src/logprob"
+import { structuralMerge } from "../../core/src/merge"
 
 async function setupTraceWriting(trace: MarkdownTrace, filename: string) {
     logVerbose(`trace: ${filename}`)
@@ -233,6 +234,10 @@ export async function runScript(
     if (GENAI_ANY_REGEX.test(scriptId)) toolFiles.push(scriptId)
 
     for (const arg of files) {
+        const stats = await host.statFile(arg)
+        if (!stats)
+            return fail(`file not found: ${arg}`, FILES_NOT_FOUND_ERROR_CODE)
+        if (stats.type !== "file") continue
         if (HTTPS_REGEX.test(arg)) resolvedFiles.add(arg)
         else {
             const ffs = await host.findFiles(arg, {
@@ -277,7 +282,10 @@ export async function runScript(
     const fragment: Fragment = {
         files: Array.from(resolvedFiles),
     }
-    const vars = parseOptionsVars(options.vars, process.env)
+    const vars = structuralMerge(
+        options.varsMap || {},
+        parseOptionsVars(options.vars, process.env)
+    )
     const stats = new GenerationStats("")
     try {
         if (options.label) trace.heading(2, options.label)

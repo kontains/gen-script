@@ -3,6 +3,7 @@ import { LanguageModel } from "./chat"
 import { Progress } from "./progress"
 import { AbortSignalOptions, MarkdownTrace, TraceOptions } from "./trace"
 import { Project } from "./ast"
+import { HostConfiguration } from "./hostconfiguration"
 
 // this is typically an instance of TextDecoder
 export interface UTF8Decoder {
@@ -112,8 +113,6 @@ export interface AzureTokenResolver {
 }
 
 export interface Host {
-    readonly dotEnvPath: string
-
     userState: any
     server: ServerManager
     path: Path
@@ -139,6 +138,10 @@ export interface Host {
     clientLanguageModel?: LanguageModel
 
     // fs
+    statFile(name: string): Promise<{
+        size: number
+        type: "file" | "directory" | "symlink"
+    }>
     readFile(name: string): Promise<Uint8Array>
     writeFile(name: string, content: Uint8Array): Promise<void>
     deleteFile(name: string): Promise<void>
@@ -156,6 +159,7 @@ export interface Host {
 }
 
 export interface RuntimeHost extends Host {
+    readonly config: HostConfiguration
     project: Project
     models: ModelService
     workspace: Omit<WorkspaceFileSystem, "grep">
